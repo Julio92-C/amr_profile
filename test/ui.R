@@ -11,7 +11,9 @@ dashboardPage(
       menuItem("Taxon Classification", tabName = "Taxonomy", icon = icon("angle-right")),
       menuItem("Relative Abundance", tabName = "Abundance", icon = icon("angle-right")),
       menuItem("AMR QC Analysis", tabName = "AMR", icon = icon("angle-right")),
-      menuItem("Genome Assembly", tabName = "Assembly", icon = icon("angle-right"))
+      menuItem("Genome Assembly", tabName = "Assembly", icon = icon("angle-right")),
+      menuItem("Genome Annotation", tabName = "Annotation", icon = icon("angle-right")),
+      menuItem("Pangenomes", tabName = "Pangenomes", icon = icon("angle-right"))
       
       
     )
@@ -237,17 +239,20 @@ dashboardPage(
                                 'Single Quote'="'"),
                               'Double Quote'),
                  sliderInput(inputId = "num2", 
-                             label = "Choose a number of row", 
+                             label = "Number of Observations", 
                              value = 12, min = 1, max = 100),
+                 
                  sliderInput(inputId = "filter",
                              label="Filter data sets", 
                              value = 0.0025, min = 0, max = 0.01),
+                 actionButton("updatePlot", "Update Bar Plot", style="margin-bottom:10px"),
                  sliderInput(inputId = "cell_width",
-                             label = "Cell width",
+                             label = "Heatmap Cell width",
                              value = 80, min = 40, max=150),
                  sliderInput(inputId = "cell_height",
-                             label = "Cell height",
+                             label = "Heatmap Cell height",
                              value = 12, min = 1, max=40),
+                 actionButton("updateHeatmap", "Update Heatmap", style="margin-bottom:10px"),
                  
                ),
                mainPanel(
@@ -266,7 +271,7 @@ dashboardPage(
                              ),
                              tabPanel("Table", DT::dataTableOutput(outputId = "mytable2")),
                              tabPanel("Summary", verbatimTextOutput(outputId = "abc_stats")),
-                             tabPanel("Relative Abundance", plotOutput(outputId = "abc_bar_plot", height = 600)),
+                             tabPanel("Relative Abundance", plotlyOutput(outputId = "abc_bar_plot", height = 500)),
                              tabPanel("Heatmap", plotOutput(outputId = "heatmap_plot", height = 800))
                  )
                  
@@ -294,7 +299,7 @@ dashboardPage(
                                 'Single Quote'="'"),
                               'Double Quote'),
                  sliderInput(inputId = "num", 
-                             label = "Choose a number of row", 
+                             label = "Number of Observations", 
                              value = 10, min = 1, max = 100),
                  #sliderInput(inputId = "accuracy", label = "Accuracy", value=90, min=70, max=100),
                  #sliderInput(inputId = "identity", label = "Identity", value=90, min=70, max=100),
@@ -318,13 +323,14 @@ dashboardPage(
                              tabPanel("category vs model", plotOutput(outputId = "category_vs_model", height = 800)),
                              tabPanel("Species vs AMR", plotOutput(outputId = "dot_plot", height = 700)),
                              tabPanel("Model vs AMR", plotlyOutput(outputId = "model_vs_amr", height = 800))
+                             
                  )
                  
                )
              )
              
           ),
-     ### <-----End of Fourth tab content--------->
+     ### <-----End of Fifth tab content--------->
      
      ### Start Sixth tab content
      tabItem("Assembly",
@@ -358,10 +364,46 @@ dashboardPage(
                      )
          )
        )
-     )
+     ),
      
-     ### <-----End of Fourth tab content--------->
+     ### <-----End of Sixth tab content--------->
      
+     ## Start of the Seven tab content
+     tabItem("Annotation",
+             fluidPage(
+               h3("Meta-genome Annotation"),
+               tags$ul(
+                 tags$li("Re-classified the resultant consensus-sequece with CAT/BAT tools. The core algorithm
+                         of both programs involves gene calling, mapping of predicted ORFs against the nr protein database,
+                         and voting-based classification of the entire contig / MAG based on classification of the individual ORFs."),
+                 tags$li("Run BUSCO for assessing genome assembly and annotation completeness."),
+                 tags$li("Prokka: Rapid prokaryotic genome annotation."),
+                 tags$li("Run the BLAST Ring Image Generator (BRIG). It is a cross-platform desktop application written in Java 1.6.
+                                 It uses CGView for image rendering and the Basic Local Alignment Search Tool (BLAST) for genome comparisons.")
+               )
+             )
+            ),
+     ### <-----End of Sixth tab content--------->
+     
+     ### Start of the Seventh tab content
+     tabItem("Pangenomes",
+             fluidPage(
+               h3("Why a pangenomes?"),
+               tags$ul(
+                 tags$li("A single reference genome cannot represent the diversity within a given species."),
+                 tags$li("Advances in sequencing technology and lowered costs has made generating a pangenome
+                                a feasible goal for many genome research groups."),
+               ),
+               h3("Features of a pangenome (genes as unit)"),
+               tags$ul(
+                 tags$li(tags$strong("Core genes:"), "Made up of genes present it all accessions in the pangenome."),
+                 tags$li(tags$strong("Accessory genes:"), "The genes that are present in some, but not all, accession in the pangenome."),
+                 tags$li(tags$strong("Unique genes:"), "lineage-specific genes; found only within a particular accession"),
+               )
+             )
+           )
+        
+     ### <-----End of Seventh tab content--------->
     )
   
   )

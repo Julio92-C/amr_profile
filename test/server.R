@@ -34,21 +34,26 @@ server <- function(input, output) {
     print(abc_stats_summary)
   })
   
-  output$abc_bar_plot <- renderPlot({
+  
+  output$abc_bar_plot <- renderPlotly({
     # Load the data sets
     data_list_merge <- abundance_data()
     
-    # Filter dataset
-    input_data <- data_list_merge[data_list_merge$batch1 > input$filter,]
+    # # Filter dataset
+    input$updatePlot
+    
+    isolate(input_data <- data_list_merge[data_list_merge$batch1 > input$filter,])
+      
+      
     
     # Format the data-frame from "wide-format" to "long-format" using gather() ####
     input_data2 <- input_data %>%
       gather(Total, Value, -name)
     
     # more control over colours
-    my_pallete <- paletteer_c("gameofthrones::targaryen", n = 100)
-    
-    p <- ggplot(input_data2, aes(x=Total, y=Value, fill=name,))
+    my_pallete <- paletteer_c("gameofthrones::targaryen", n = 200)
+
+    p <- ggplot(input_data2, aes(x=Total, y=Value, fill=name))
     p <- p + geom_col(position = "fill", col = "white")
     p <- p + scale_y_continuous(labels = function(x) paste0(x*100, "%"))
     p <- p + labs(x="Splitted Data-sets", y="Relative Abundance (%)")
@@ -57,6 +62,11 @@ server <- function(input, output) {
     p <- p + theme(legend.position="right")
     p <- p + scale_fill_manual(values = my_pallete)
     p
+
+    # Relative Abundance Bar Plot with PLOTLY ####
+    fig_relative_abc <- plotly::ggplotly(p)
+    fig_relative_abc
+    
     
   })
   
@@ -71,7 +81,8 @@ server <- function(input, output) {
     input_data <- input_data[,2:6]
     
     # Filter dataset by Relative Abundance > 0.5% 
-    input_data <- input_data[data_list_merge$batch1 > input$filter,]
+    input$updateHeatmap
+    isolate(input_data <- input_data[data_list_merge$batch1 > input$filter,])
     
     # Sort data set by fraction_total_reads 
     input_data <- input_data[order(input_data$batch1),]
@@ -90,15 +101,16 @@ server <- function(input, output) {
     #print(my_pallete)
     
     # Create heatmap using pheamap package ###################################################
-    pheatmap(input_data*100, 
+    hm <- pheatmap(input_data*100, 
              cellwidth = input$cell_width, cellheight = input$cell_height, display_numbers = FALSE,
              col = my_pallete,
              border_color = "black",
              legend_breaks = c(0.5, 2, 4, 6, 8),
-    )
+       )
     
+    hm
     
-    
+  
   })
   
   # <------------AMR stats analysis ---------->
@@ -183,7 +195,7 @@ server <- function(input, output) {
     a <- a + theme(legend.position="none")
     
     # Coverage vs sequence length
-    c <- ggplot(amra_data, aes(x=Seq_length, y=Coverage, fill=Model_Type,))
+    c <- ggplot(amra_data, aes(x=Seq_length, y=Coverage, fill=Model_Type))
     c <- c + geom_bin_2d()
     c <- c + theme_classic()
     c <- c + labs(x="Sequence Length (bp)", y="Coverage (%)")
