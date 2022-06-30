@@ -1,4 +1,3 @@
-
 # Load packages 
 library(plotly)
 library(ggplot2)
@@ -8,7 +7,8 @@ library(paletteer)
 library(pheatmap)
 library(DT)
 
-shinyServer(function(input, output) {
+
+server <- function(input, output) { 
   # <---------Analysis of AMR data sets ------>
   abundance_data <- reactive({
     # input$file1 will be NULL initially. After the user selects and uploads a 
@@ -34,21 +34,27 @@ shinyServer(function(input, output) {
     print(abc_stats_summary)
   })
   
-  output$abc_bar_plot <- renderPlot({
+  
+  output$abc_bar_plot <- renderPlotly({
     # Load the data sets
     data_list_merge <- abundance_data()
     
-    # Filter dataset
-    input_data <- data_list_merge[data_list_merge$batch1 > input$filter,]
+    # # Filter dataset
+    input$updatePlot
+    
+    isolate(input_data <- data_list_merge[data_list_merge$batch1 > input$filter,])
+      
+      
     
     # Format the data-frame from "wide-format" to "long-format" using gather() ####
     input_data2 <- input_data %>%
       gather(Total, Value, -name)
     
     # more control over colours
-    my_pallete <- paletteer_c("gameofthrones::targaryen", n = 100)
-    
-    p <- ggplot(input_data2, aes(x=Total, y=Value, fill=name,))
+    my_pallete <- viridis::cividis(841)
+   
+
+    p <- ggplot(input_data2, aes(x=Total, y=Value, fill=name))
     p <- p + geom_col(position = "fill", col = "white")
     p <- p + scale_y_continuous(labels = function(x) paste0(x*100, "%"))
     p <- p + labs(x="Splitted Data-sets", y="Relative Abundance (%)")
@@ -57,6 +63,11 @@ shinyServer(function(input, output) {
     p <- p + theme(legend.position="right")
     p <- p + scale_fill_manual(values = my_pallete)
     p
+
+    # Relative Abundance Bar Plot with PLOTLY ####
+    fig_relative_abc <- plotly::ggplotly(p)
+    fig_relative_abc
+    
     
   })
   
@@ -71,7 +82,8 @@ shinyServer(function(input, output) {
     input_data <- input_data[,2:6]
     
     # Filter dataset by Relative Abundance > 0.5% 
-    input_data <- input_data[data_list_merge$batch1 > input$filter,]
+    input$updateHeatmap
+    isolate(input_data <- input_data[data_list_merge$batch1 > input$filter,])
     
     # Sort data set by fraction_total_reads 
     input_data <- input_data[order(input_data$batch1),]
@@ -86,23 +98,22 @@ shinyServer(function(input, output) {
     
     
     
-    my_pallete <- paletteer_c("gameofthrones::lannister", n = 22)
+    my_pallete1 <- viridis::cividis(22)
+    
     #print(my_pallete)
     
     # Create heatmap using pheamap package ###################################################
-    pheatmap(input_data*100, 
+    hm <- pheatmap(input_data*100, 
              cellwidth = input$cell_width, cellheight = input$cell_height, display_numbers = FALSE,
-             col = my_pallete,
+             col = my_pallete1,
              border_color = "black",
              legend_breaks = c(0.5, 2, 4, 6, 8),
-    )
+       )
     
+    hm
     
-    
+  
   })
-  
-  
-  
   
   # <------------AMR stats analysis ---------->
   amra_data <- reactive({
@@ -186,7 +197,7 @@ shinyServer(function(input, output) {
     a <- a + theme(legend.position="none")
     
     # Coverage vs sequence length
-    c <- ggplot(amra_data, aes(x=Seq_length, y=Coverage, fill=Model_Type,))
+    c <- ggplot(amra_data, aes(x=Seq_length, y=Coverage, fill=Model_Type))
     c <- c + geom_bin_2d()
     c <- c + theme_classic()
     c <- c + labs(x="Sequence Length (bp)", y="Coverage (%)")
@@ -209,7 +220,7 @@ shinyServer(function(input, output) {
     
     
     
-    subplot(fig1, fig3, fig4, fig5,nrows = 2, titleX = TRUE, titleY = TRUE, margin = 0.03)
+    subplot(fig1, fig3, fig4, fig5,nrows = 4, titleX = TRUE, titleY = TRUE, margin = 0.03)
   })
   output$category_vs_model <- renderPlot({
     # AMR: Category vs Model Type
@@ -244,5 +255,5 @@ shinyServer(function(input, output) {
     # Plot Model type vs Identity with PLOTLY ####
     fig <- plotly::ggplotly(f)
   })
-})
-
+  
+  }
