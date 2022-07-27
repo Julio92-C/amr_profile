@@ -6,9 +6,135 @@ library(tidyverse)
 library(paletteer)
 library(pheatmap)
 library(DT)
+library(datasets)
 
 
-server <- function(input, output) { 
+
+
+server <- function(input, output, session) { 
+  #<----------Preliminary Results------------->
+  genomes_dataset <- reactive({
+    
+    
+    inFile <- input$file3
+    
+    
+    if (is.null(inFile))
+      return(NULL)
+    
+    data <-read.csv(inFile$datapath, header=input$header, sep=input$sep, quote=input$quote)
+  })
+  
+  output$mytable3 = DT::renderDataTable({
+    DT::datatable(genomes_dataset(), options = list(pageLength = input$num3))
+  })
+  
+  output$genomes_stats <- renderPrint({
+    genomes_stats_summary <- summary(genomes_dataset())
+    print(genomes_stats_summary)
+    
+    })
+  
+    output$sample_source <- renderPlotly({
+    # Load the data sets
+    ss_data <- genomes_dataset()
+    
+    # Sample source Frequency
+    s <- ggplot(ss_data, aes(x=factor(Source), fill=Source))
+    s <- s + labs(x="Sample source", y="Frequency")
+    s <- s + geom_bar(stat="count", width=0.7, color="black")
+    s <- s + scale_x_discrete(limits=c("Clinical", "Environmental", 
+                                       "Unknown"))
+    s <- s +  theme_classic()
+    s <- s + ggtitle("Sample Source Frequency")
+    s <- s + theme(plot.title = element_text(hjust = 0.5))
+    #s <- s + theme(legend.position="none")
+    s
+    
+    # Sample source Bar Plot with PLOTLY ####
+    sample_source_freq <- plotly::ggplotly(s)
+    sample_source_freq
+    
+    })
+  
+  
+  
+  
+  #<----------End Preliminary Results------------->
+    
+  #<----------Pangenomes Analysis----------------->
+    genes_matrix <- reactive({
+      
+      
+      inFile <- input$file4
+      
+      
+      if (is.null(inFile))
+        return(NULL)
+      
+      data <-read.csv(inFile$datapath, header=input$header, sep=input$sep, quote=input$quote)
+    })
+    
+    output$mytable4 = DT::renderDataTable({
+      DT::datatable(genes_matrix(), options = list(pageLength = input$num5))
+    })
+    
+    output$Roary_scritp <- renderText({
+      readLines(genes_matrix())
+    })
+    
+  #<---------- End Pangenomes Analysis------------>
+    
+    
+  #<----------Test------------->
+    ## for display of first few observations of mtcars dataset
+    mtcars <- reactive({
+      inFile <- input$file4
+      
+      
+      if (is.null(inFile))
+        return(NULL)
+      
+      data <-read.csv(inFile$datapath, header=input$header, sep=input$sep, quote=input$quote)
+      
+    })
+    
+    
+    # output$data <- renderTable({
+    #   head(mtcars())
+    # })
+    
+    output$mytable4 = DT::renderDataTable({
+      DT::datatable(mtcars(), options = list(pageLength = input$num5))
+    })
+    
+    ## Plotly Scatter Plot
+    output$plot1 <- renderPlotly({
+      plot_ly(data=mtcars(), 
+              x=~wt, 
+              y=~mpg,
+              type = "scatter",
+              mode = "markers")
+      
+    })
+    
+    
+    ## Plotly Histogram
+    output$plot2 <- renderPlotly({
+      plot_ly(data=mtcars(), x=~mpg, type="histogram")
+      
+      
+    })
+    
+    ## input widget
+    output$inputwidget <- renderUI({
+      selectInput(inputId = "in", "select a variable", choices = names(mtcars()))
+    })
+    
+    
+  #<----------End test------------->
+    
+  
   # <---------Analysis of AMR data sets ------>
   abundance_data <- reactive({
     # input$file1 will be NULL initially. After the user selects and uploads a 
